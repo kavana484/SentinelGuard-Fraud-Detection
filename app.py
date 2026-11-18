@@ -81,17 +81,13 @@ st.write("Model type:", type(model))
 if isinstance(model, dict):
     st.write("Model keys:", list(model.keys()))
     st.stop()
-
-        # Prepare data for prediction
-        X = data.drop(columns=["Class"], errors="ignore")
-
-        # Make predictions
+    # Prepare data for prediction
+    X = data.drop(columns=["Class"], errors="ignore")
+    # Make predictions
         predictions = model.predict(X)
-
-        # Add predictions to dataset
+# Add predictions to dataset
         data["Prediction"] = predictions
-
-        # Display results
+# Display results
         st.subheader("Fraud Detection Results")
 
         total = len(predictions)
@@ -103,11 +99,10 @@ if isinstance(model, dict):
         col1.metric("Total Transactions", total)
         col2.metric("Normal Transactions", normal)
         col3.metric("Fraudulent Transactions", fraud)
-
-        # Display prediction table
+# Display prediction table
         st.dataframe(data.head(20))
 
-        # Download results
+# Download results
         csv = data.to_csv(index=False).encode("utf-8")
 
         st.download_button(
