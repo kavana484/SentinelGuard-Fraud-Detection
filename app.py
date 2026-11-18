@@ -74,7 +74,13 @@ elif menu == "Fraud Detection":
 
         st.write("Dataset Shape:", data.shape)
 # Load Machine Learning Model
-        model = joblib.load("fraud_detection_model (1).pkl")
+model = joblib.load("fraud_detection_model (1).pkl")
+
+st.write("Model type:", type(model))
+
+if isinstance(model, dict):
+    st.write("Model keys:", list(model.keys()))
+    st.stop()
 
         # Prepare data for prediction
         X = data.drop(columns=["Class"], errors="ignore")
