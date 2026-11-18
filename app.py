@@ -177,5 +177,4 @@ if menu == "Fraud Detection":
 
             except Exception as e:
                 st.error(f"Prediction Error: {e}")
-                model = joblib.load("fraud_detection_model (1).pkl")
-                X = pd.read_csv("X_train.csv")
+                
