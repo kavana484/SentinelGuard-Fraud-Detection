@@ -49,8 +49,7 @@ if menu == "Home":
         "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1000",
         caption="Secure Digital Transactions"
     )
-
-    # Fraud Detection Page
+# Fraud Detection Page
 elif menu == "Fraud Detection":
 
     st.header("🔍 Fraud Detection")
@@ -81,7 +80,7 @@ st.write("Model type:", type(model))
 if isinstance(model, dict):
     st.write("Model keys:", list(model.keys()))
     st.stop()
-    # Prepare data for prediction
+# Prepare data for prediction
     X = data.drop(columns=["Class"], errors="ignore")
     # Make predictions
         predictions = model.predict(X)
