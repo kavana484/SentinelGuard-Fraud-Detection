@@ -73,7 +73,43 @@ elif menu == "Fraud Detection":
         st.dataframe(data.head())
 
         st.write("Dataset Shape:", data.shape)
+# Load Machine Learning Model
+        model = joblib.load("fraud_detection_model (1).pkl")
 
+        # Prepare data for prediction
+        X = data.drop(columns=["Class"], errors="ignore")
+
+        # Make predictions
+        predictions = model.predict(X)
+
+        # Add predictions to dataset
+        data["Prediction"] = predictions
+
+        # Display results
+        st.subheader("Fraud Detection Results")
+
+        total = len(predictions)
+        fraud = int((predictions == 1).sum())
+        normal = int((predictions == 0).sum())
+
+        col1, col2, col3 = st.columns(3)
+
+        col1.metric("Total Transactions", total)
+        col2.metric("Normal Transactions", normal)
+        col3.metric("Fraudulent Transactions", fraud)
+
+        # Display prediction table
+        st.dataframe(data.head(20))
+
+        # Download results
+        csv = data.to_csv(index=False).encode("utf-8")
+
+        st.download_button(
+            "Download Prediction Results",
+            csv,
+            "fraud_predictions.csv",
+            "text/csv"
+        )
 
 # About Project Page
 elif menu == "About Project":
