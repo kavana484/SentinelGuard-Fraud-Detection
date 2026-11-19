@@ -257,8 +257,7 @@ elif menu == "Fraud Detection":
             if st.button("Predict Fraud"):
 
                 predictions = model.predict(X)
-                # MODEL PERFORMANCE
-
+        # MODEL PERFORMANCE
         st.subheader("Model Performance")
 
         if "Class" in data.columns:
