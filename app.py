@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import joblib
 import os
+
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -11,9 +12,9 @@ from sklearn.metrics import (
     confusion_matrix
 )
 
-# --------------------------------
+# -----------------------------------
 # PAGE CONFIGURATION
-# --------------------------------
+# -----------------------------------
 
 st.set_page_config(
     page_title="SentinelGuard - Fraud Detection",
@@ -21,75 +22,65 @@ st.set_page_config(
     layout="wide"
 )
 
-# --------------------------------
-# HEADER
-# --------------------------------
+# -----------------------------------
+# LOAD MODEL
+# -----------------------------------
 
-st.title("🛡️ SentinelGuard")
-st.subheader("Credit Card Fraud Detection System")
+MODEL_PATH = "fraud_detection_model (1).pkl"
 
-st.write(
-    "An intelligent Machine Learning application "
-    "to identify fraudulent credit card transactions."
-)
-
-st.divider()
-
-# --------------------------------
-# LOAD MACHINE LEARNING MODEL
-# --------------------------------
 
 @st.cache_resource
 def load_model():
 
-    model_path = "fraud_detection_model (1).pkl"
-
-    if not os.path.exists(model_path):
+    if not os.path.exists(MODEL_PATH):
         raise FileNotFoundError(
-            f"Model file not found: {model_path}"
+            f"Model file not found: {MODEL_PATH}"
         )
 
-    return joblib.load(model_path)
+    loaded_model = joblib.load(MODEL_PATH)
 
+    if isinstance(loaded_model, dict):
 
-def find_predictor(obj):
-
-    if hasattr(obj, "predict"):
-        return obj
-
-    if isinstance(obj, dict):
-
-        preferred_keys = [
+        for key in [
             "model",
             "classifier",
             "best_model",
             "rf_model",
             "random_forest",
             "pipeline"
-        ]
+        ]:
 
-        for key in preferred_keys:
-            if key in obj:
-                result = find_predictor(obj[key])
-                if result is not None:
-                    return result
+            if key in loaded_model:
+                candidate = loaded_model[key]
 
-        for value in obj.values():
-            result = find_predictor(value)
-            if result is not None:
-                return result
+                if hasattr(candidate, "predict"):
+                    return candidate
 
-    return None
+    if hasattr(loaded_model, "predict"):
+        return loaded_model
+
+    raise ValueError("No prediction model found in PKL file.")
 
 
-# --------------------------------
-# SIDEBAR NAVIGATION
-# --------------------------------
+try:
+    model = load_model()
+    model_loaded = True
 
-st.sidebar.title("Navigation")
+except Exception as e:
+    model_loaded = False
+    model_error = str(e)
+
+
+# -----------------------------------
+# SIDEBAR
+# -----------------------------------
+
+st.sidebar.title("🛡️ SentinelGuard")
+
+st.sidebar.write("Credit Card Fraud Detection")
 
 menu = st.sidebar.radio(
-    "Select Page",
+    "Navigation",
     [
         "Home",
         "Fraud Detection",
@@ -97,58 +88,59 @@ menu = st.sidebar.radio(
     ]
 )
 
-# --------------------------------
+
+# -----------------------------------
 # HOME PAGE
-# --------------------------------
+# -----------------------------------
 
 if menu == "Home":
 
-    st.header("Welcome to SentinelGuard")
+    st.title("🛡️ SentinelGuard")
 
-    st.write("""
-    SentinelGuard is a Credit Card Fraud Detection
-    application developed using Machine Learning.
+    st.subheader(
+        "Credit Card Fraud Detection System"
+    )
 
-    It helps identify suspicious transactions
-    and distinguish fraudulent transactions
-    from legitimate transactions.
-    """)
+    st.write(
+        """
+        SentinelGuard is a Machine Learning based
+        application designed to identify fraudulent
+        credit card transactions.
+        """
+    )
 
-    col1, col2 = st.columns(2)
+    st.info(
+        "Upload transaction data to identify potential fraud."
+    )
 
-    with col1:
-        st.info("🤖 Machine Learning Based Detection")
+    col1, col2, col3 = st.columns(3)
 
-    with col2:
-        st.success("📊 Transaction Analysis")
+    col1.metric("Technology", "Machine Learning")
 
-    st.subheader("Project Features")
+    col2.metric("Algorithm", "Random Forest")
 
-    st.write("""
-    - Upload credit card transaction datasets.
-    - Analyze transaction information.
-    - Predict fraudulent transactions.
-    - Display fraud detection statistics.
-    - Download prediction results.
-    """)
-
-    st.divider()
-
-    st.write("Developed using Python and Streamlit.")
+    col3.metric("Application", "Streamlit")
 
 
-# --------------------------------
+# -----------------------------------
 # FRAUD DETECTION PAGE
-# --------------------------------
+# -----------------------------------
 
 elif menu == "Fraud Detection":
 
-    st.header("Credit Card Fraud Detection")
+    st.title("Credit Card Fraud Detection")
 
     st.write(
-        "Upload your credit card transaction CSV file "
-        "to identify fraudulent transactions."
+        "Upload your transaction CSV file below."
     )
+
+    if not model_loaded:
+
+        st.error(
+            f"Model loading failed: {model_error}"
+        )
+
+        st.stop()
 
     uploaded_file = st.file_uploader(
         "Upload CSV Dataset",
@@ -158,17 +150,16 @@ elif menu == "Fraud Detection":
     if uploaded_file is not None:
 
         try:
-            # Read dataset
+
             data = pd.read_csv(uploaded_file)
 
             st.success("Dataset uploaded successfully!")
 
-            # Dataset information
-            st.subheader("Dataset Preview")
+            # DATASET INFORMATION
 
-            st.dataframe(data.head(10))
+            st.subheader("Dataset Overview")
 
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
 
             col1.metric(
                 "Total Rows",
@@ -180,45 +171,45 @@ elif menu == "Fraud Detection":
                 data.shape[1]
             )
 
-            st.divider()
-
-            # Load model
-            st.subheader("Machine Learning Model")
-
-            saved_model = load_model()
-
-            model = find_predictor(saved_model)
-
-            if model is None:
-
-                st.error(
-                    "No prediction model found in the saved file."
-                )
-
-                if isinstance(saved_model, dict):
-                    st.write(
-                        "Available model keys:",
-                        list(saved_model.keys())
-                    )
-
-                st.stop()
-
-            st.success("Machine Learning model loaded successfully!")
-
-            # Prepare dataset
-            st.subheader("Preparing Dataset")
-
-            X = data.drop(
-                columns=["Class", "Prediction", "Result"],
-                errors="ignore"
+            col3.metric(
+                "Missing Values",
+                int(data.isnull().sum().sum())
             )
 
-            # Check expected model features
+            # DATASET PREVIEW
+
+            st.subheader("Dataset Preview")
+
+            st.dataframe(
+                data.head(10),
+                use_container_width=True
+            )
+
+            # CHECK MODEL FEATURES
+
             expected_features = getattr(
                 model,
                 "feature_names_in_",
                 None
             )
+
+            # REMOVE TARGET COLUMNS
+
+            target_columns = [
+                "Class",
+                "Prediction",
+                "Result"
+            ]
+
+            X = data.drop(
+                columns=[
+                    col for col in target_columns
+                    if col in data.columns
+                ],
+                errors="ignore"
+            )
+
+            # SELECT REQUIRED FEATURES
 
             if expected_features is not None:
 
@@ -238,7 +229,38 @@ elif menu == "Fraud Detection":
 
                 X = X[list(expected_features)]
 
-            # Check for numeric data
+            else:
+
+                X = X.select_dtypes(
+                    include=[np.number]
+                )
+
+                expected_count = getattr(
+                    model,
+                    "n_features_in_",
+                    None
+                )
+
+                if (
+                    expected_count is not None
+                    and X.shape[1] != expected_count
+                ):
+
+                    st.error(
+                        f"Model expects {expected_count} "
+                        f"features, but dataset has "
+                        f"{X.shape[1]} numeric features."
+                    )
+
+                    st.stop()
+
+                st.warning(
+                    "Feature order is based on the uploaded "
+                    "CSV. Ensure it matches model training order."
+                )
+
+            # CHECK NUMERIC DATA
+
             if not all(
                 pd.api.types.is_numeric_dtype(X[col])
                 for col in X.columns
@@ -250,119 +272,159 @@ elif menu == "Fraud Detection":
 
                 st.stop()
 
-            # Make predictions
+            if X.isnull().sum().sum() > 0:
+
+                st.error(
+                    "Dataset contains missing values. "
+                    "Please clean the dataset first."
+                )
+
+                st.stop()
+
+            # MAKE PREDICTIONS
+
             st.subheader("Fraud Detection Results")
 
-    if st.button("Predict Fraud"):
+            if st.button("Predict Fraud"):
 
-        predictions = model.predict(X)
-        # MODEL PERFORMANCE
-        st.subheader("Model Performance")
-
-        if "Class" in data.columns:
-
-            y_true = data["Class"].astype(int)
-
-            accuracy = accuracy_score(y_true, predictions)
-            precision = precision_score(
-                y_true, predictions, zero_division=0
-            )
-            recall = recall_score(
-                y_true, predictions, zero_division=0
-            )
-            f1 = f1_score(
-                y_true, predictions, zero_division=0
-            )
-
-            col1, col2, col3, col4 = st.columns(4)
-
-            col1.metric("Accuracy", f"{accuracy * 100:.2f}%")
-            col2.metric("Precision", f"{precision * 100:.2f}%")
-            col3.metric("Recall", f"{recall * 100:.2f}%")
-            col4.metric("F1 Score", f"{f1 * 100:.2f}%")
-
-            # Confusion Matrix
-
-            st.subheader("Confusion Matrix")
-
-            cm = confusion_matrix(y_true, predictions)
-
-            cm_df = pd.DataFrame(
-                cm,
-                index=["Actual Legitimate", "Actual Fraud"],
-                columns=["Predicted Legitimate", "Predicted Fraud"]
-            )
-
-            st.dataframe(cm_df)
-
-        else:
-            st.info(
-                "Model performance requires a CSV file containing "
-                "the actual Class column."
-            )
+                predictions = model.predict(X)
 
                 results = data.copy()
 
                 results["Prediction"] = predictions
 
-                results["Result"] = results[
-                    "Prediction"
-                ].map({
-                    0: "Legitimate",
-                    1: "Fraudulent"
-                })
+                results["Result"] = [
+                    "Fraudulent" if p == 1
+                    else "Legitimate"
+                    for p in predictions
+                ]
 
-                st.success("Prediction completed successfully!")
+                # PREDICTION SUMMARY
 
-                # Calculate statistics
-                total = len(predictions)
-
-                fraud = int(
-                    (predictions == 1).sum()
+                fraud_count = int(
+                    np.sum(predictions == 1)
                 )
 
-                normal = int(
-                    (predictions == 0).sum()
+                legitimate_count = int(
+                    np.sum(predictions == 0)
                 )
 
-                # Display metrics
                 col1, col2, col3 = st.columns(3)
 
                 col1.metric(
                     "Total Transactions",
-                    total
+                    len(predictions)
                 )
 
                 col2.metric(
-                    "Normal Transactions",
-                    normal
+                    "Fraudulent Transactions",
+                    fraud_count
                 )
 
                 col3.metric(
-                    "Fraudulent Transactions",
-                    fraud
+                    "Legitimate Transactions",
+                    legitimate_count
                 )
 
-                # Fraud percentage
-                if total > 0:
+                # RESULTS TABLE
 
-                    fraud_percentage = (
-                        fraud / total
-                    ) * 100
+                st.subheader("Prediction Details")
 
-                    st.write(
-                        f"Fraud Percentage: "
-                        f"{fraud_percentage:.2f}%"
+                st.dataframe(
+                    results,
+                    use_container_width=True
+                )
+
+                # MODEL PERFORMANCE
+
+                if "Class" in data.columns:
+
+                    st.subheader("Model Performance")
+
+                    y_true = data["Class"].astype(int)
+
+                    accuracy = accuracy_score(
+                        y_true,
+                        predictions
                     )
 
-                st.divider()
+                    precision = precision_score(
+                        y_true,
+                        predictions,
+                        zero_division=0
+                    )
 
-                # Display results
-                st.subheader("Prediction Table")
+                    recall = recall_score(
+                        y_true,
+                        predictions,
+                        zero_division=0
+                    )
 
-                st.dataframe(results.head(100))
+                    f1 = f1_score(
+                        y_true,
+                        predictions,
+                        zero_division=0
+                    )
 
-                # Download results
+                    col1, col2, col3, col4 = st.columns(4)
+
+                    col1.metric(
+                        "Accuracy",
+                        f"{accuracy * 100:.2f}%"
+                    )
+
+                    col2.metric(
+                        "Precision",
+                        f"{precision * 100:.2f}%"
+                    )
+
+                    col3.metric(
+                        "Recall",
+                        f"{recall * 100:.2f}%"
+                    )
+
+                    col4.metric(
+                        "F1 Score",
+                        f"{f1 * 100:.2f}%"
+                    )
+
+                    # CONFUSION MATRIX
+
+                    st.subheader("Confusion Matrix")
+
+                    cm = confusion_matrix(
+                        y_true,
+                        predictions,
+                        labels=[0, 1]
+                    )
+
+                    cm_df = pd.DataFrame(
+                        cm,
+                        index=[
+                            "Actual Legitimate",
+                            "Actual Fraud"
+                        ],
+                        columns=[
+                            "Predicted Legitimate",
+                            "Predicted Fraud"
+                        ]
+                    )
+
+                    st.dataframe(
+                        cm_df,
+                        use_container_width=True
+                    )
+
+                else:
+
+                    st.info(
+                        "Upload a dataset containing the "
+                        "'Class' column to calculate "
+                        "model performance metrics."
+                    )
+
+                # DOWNLOAD RESULTS
+
                 csv = results.to_csv(
                     index=False
                 ).encode("utf-8")
@@ -370,56 +432,50 @@ elif menu == "Fraud Detection":
                 st.download_button(
                     label="Download Prediction Results",
                     data=csv,
-                    file_name="fraud_predictions.csv",
+                    file_name="fraud_detection_results.csv",
                     mime="text/csv"
                 )
 
+                st.success(
+                    "Fraud detection completed successfully!"
+                )
+
         except Exception as e:
-            st.error( f"An error occurred: {e}")
-    else:
-        st.info(
-            "Please upload a CSV dataset to continue."
-        )
+
+            st.error(
+                f"An error occurred: {e}"
+            )
 
 
-# --------------------------------
-# ABOUT PROJECT PAGE
-# --------------------------------
+# -----------------------------------
+# ABOUT PROJECT
+# -----------------------------------
 
 elif menu == "About Project":
 
-    st.header("About Our Project")
+    st.title("About SentinelGuard")
 
-    st.write("""
-    SentinelGuard is a Credit Card Fraud Detection
-    application developed using Machine Learning.
+    st.write(
+        """
+        SentinelGuard is a Credit Card Fraud Detection
+        project developed using Machine Learning.
 
-    The project identifies potentially fraudulent
-    transactions by analyzing transaction data.
-    """)
+        Project Details:
 
-    st.subheader("Technology Used")
+        - Project Name: SentinelGuard
+        - Domain: Machine Learning
+        - Algorithm: Random Forest Classifier
+        - Programming Language: Python
+        - Framework: Streamlit
+        - Dataset: Credit Card Transactions
 
-    st.write("""
-    - Python
-    - Pandas
-    - NumPy
-    - Scikit-learn
-    - Random Forest Classifier
-    - Streamlit
-    - Joblib
-    """)
+        Objective:
 
-    st.subheader("Algorithm Used")
+        To identify fraudulent credit card transactions
+        and distinguish them from legitimate transactions.
+        """
+    )
 
-    st.write("Random Forest Classifier")
-
-    st.subheader("Project Objective")
-
-    st.write("""
-    The main objective is to detect fraudulent
-    credit card transactions and help improve
-    transaction security.
-    """)
-
-    st.success("Thank you for using SentinelGuard!")
+    st.success(
+        "SentinelGuard - Intelligent Fraud Detection System"
+    )
