@@ -158,7 +158,6 @@ elif menu == "Fraud Detection":
     if uploaded_file is not None:
 
         try:
-
             # Read dataset
             data = pd.read_csv(uploaded_file)
 
@@ -376,13 +375,8 @@ elif menu == "Fraud Detection":
                 )
 
         except Exception as e:
-
-            st.error(
-                f"An error occurred: {e}"
-            )
-
+            st.error( f"An error occurred: {e}")
     else:
-
         st.info(
             "Please upload a CSV dataset to continue."
         )
