@@ -3,6 +3,13 @@ import pandas as pd
 import numpy as np
 import joblib
 import os
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    confusion_matrix
+)
 
 # --------------------------------
 # PAGE CONFIGURATION
@@ -250,6 +257,51 @@ elif menu == "Fraud Detection":
             if st.button("Predict Fraud"):
 
                 predictions = model.predict(X)
+                # MODEL PERFORMANCE
+
+        st.subheader("Model Performance")
+
+        if "Class" in data.columns:
+
+            y_true = data["Class"].astype(int)
+
+            accuracy = accuracy_score(y_true, predictions)
+            precision = precision_score(
+                y_true, predictions, zero_division=0
+            )
+            recall = recall_score(
+                y_true, predictions, zero_division=0
+            )
+            f1 = f1_score(
+                y_true, predictions, zero_division=0
+            )
+
+            col1, col2, col3, col4 = st.columns(4)
+
+            col1.metric("Accuracy", f"{accuracy * 100:.2f}%")
+            col2.metric("Precision", f"{precision * 100:.2f}%")
+            col3.metric("Recall", f"{recall * 100:.2f}%")
+            col4.metric("F1 Score", f"{f1 * 100:.2f}%")
+
+            # Confusion Matrix
+
+            st.subheader("Confusion Matrix")
+
+            cm = confusion_matrix(y_true, predictions)
+
+            cm_df = pd.DataFrame(
+                cm,
+                index=["Actual Legitimate", "Actual Fraud"],
+                columns=["Predicted Legitimate", "Predicted Fraud"]
+            )
+
+            st.dataframe(cm_df)
+
+        else:
+            st.info(
+                "Model performance requires a CSV file containing "
+                "the actual Class column."
+            )
 
                 results = data.copy()
 
