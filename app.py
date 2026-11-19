@@ -254,9 +254,9 @@ elif menu == "Fraud Detection":
             # Make predictions
             st.subheader("Fraud Detection Results")
 
-            if st.button("Predict Fraud"):
+    if st.button("Predict Fraud"):
 
-                predictions = model.predict(X)
+        predictions = model.predict(X)
         # MODEL PERFORMANCE
         st.subheader("Model Performance")
 
